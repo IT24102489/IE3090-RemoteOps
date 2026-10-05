@@ -1,0 +1,21 @@
+CC = gcc
+CFLAGS = -Wall -Wextra -pthread
+
+AGENT_SRC = agent_489.c
+CONTROLLER_SRC = controller_489.c
+
+AGENT_BIN = agent_489
+CONTROLLER_BIN = controller_489
+
+all: $(AGENT_BIN) $(CONTROLLER_BIN)
+
+$(AGENT_BIN): $(AGENT_SRC)
+	$(CC) $(CFLAGS) $(AGENT_SRC) -o $(AGENT_BIN)
+
+$(CONTROLLER_BIN): $(CONTROLLER_SRC)
+	$(CC) $(CFLAGS) $(CONTROLLER_SRC) -o $(CONTROLLER_BIN)
+
+clean:
+	rm -f $(AGENT_BIN) $(CONTROLLER_BIN)
+
+rebuild: clean all

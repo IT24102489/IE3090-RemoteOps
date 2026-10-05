@@ -42,3 +42,53 @@
 [2026-10-05 22:00:02] UDP monitoring stopped
 [2026-10-05 22:00:38] Command: QUIT
 [2026-10-05 22:00:38] Controller ended session with QUIT
+[2026-10-05 22:23:13] Concurrent Agent started
+[2026-10-05 22:23:59] Concurrent Agent started
+[2026-10-05 22:24:26] Controller connected
+[2026-10-05 22:24:31] Controller connected
+[2026-10-05 22:24:36] Controller connected
+[2026-10-05 22:24:40] Controller connected
+[2026-10-05 22:24:48] Command: AUTH OPS-2489
+[2026-10-05 22:24:53] Command: AUTH OPS-2489
+[2026-10-05 22:24:57] Command: AUTH OPS-2489
+[2026-10-05 22:25:01] Command: AUTH OPS-2489
+[2026-10-05 22:25:09] Command: SYSINFO
+[2026-10-05 22:25:15] Command: EXEC WHOAMI
+[2026-10-05 22:25:22] Command: EXEC HOSTNAME
+[2026-10-05 22:25:28] Command: SYSINFO
+[2026-10-05 22:26:04] Controller connected
+[2026-10-05 22:26:17] Command: AUTH OPS-2489
+[2026-10-05 22:26:24] Command: LISTPROC
+[2026-10-05 22:27:12] Command: QUIT
+[2026-10-05 22:27:12] Controller ended session with QUIT
+[2026-10-05 22:27:18] Command: QUIT
+[2026-10-05 22:27:18] Controller ended session with QUIT
+[2026-10-05 22:27:25] Command: QUIT
+[2026-10-05 22:27:25] Controller ended session with QUIT
+[2026-10-05 22:27:31] Command: QUIT
+[2026-10-05 22:27:31] Controller ended session with QUIT
+[2026-10-05 22:27:38] Command: QUIT
+[2026-10-05 22:27:38] Controller ended session with QUIT
+[2026-10-05 22:41:20] Concurrent Agent started
+[2026-10-05 22:41:24] Controller connected
+[2026-10-05 22:41:32] Command: AUTH OPS-0000
+[2026-10-05 22:41:39] Command: AUTH OPS-2489
+[2026-10-05 22:41:45] Command: SYSINFO
+[2026-10-05 22:41:51] Command: LISTPROC
+[2026-10-05 22:41:57] Command: EXEC DATE
+[2026-10-05 22:42:03] Command: EXEC UPTIME
+[2026-10-05 22:42:08] Command: EXEC DISKFREE
+[2026-10-05 22:42:14] Command: EXEC HOSTNAME
+[2026-10-05 22:42:21] Command: EXEC WHOAMI
+[2026-10-05 22:42:27] Command: EXEC REBOOT
+[2026-10-05 22:42:34] Command: PUT testfile.txt 37
+[2026-10-05 22:42:34] File uploaded: testfile.txt (37 bytes)
+[2026-10-05 22:42:41] Command: GET testfile.txt
+[2026-10-05 22:42:41] File downloaded: testfile.txt (37 bytes)
+[2026-10-05 22:42:48] Command: GET missing.txt
+[2026-10-05 22:42:53] Command: MONITOR START 9500
+[2026-10-05 22:42:53] UDP monitoring started
+[2026-10-05 22:43:02] Command: MONITOR STOP
+[2026-10-05 22:43:02] UDP monitoring stopped
+[2026-10-05 22:43:07] Command: QUIT
+[2026-10-05 22:43:07] Controller ended session with QUIT
