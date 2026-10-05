@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 
 #define PORT 9410
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 16384
 
 #define AUTH_TOKEN "OPS-2489"
 #define SID "9842"
@@ -111,6 +111,61 @@ long get_uptime_seconds()
     fclose(fp);
 
     return (long)uptime;
+}
+
+
+int get_process_list(char *output, size_t output_size)
+{
+    FILE *fp;
+    char line[256];
+
+    output[0] = '\0';
+
+    fp = popen("ps -eo pid=,comm=", "r");
+
+    if (fp == NULL) {
+        return -1;
+    }
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+
+        int pid;
+        char process_name[128];
+
+        if (sscanf(line, "%d %127s", &pid, process_name) == 2) {
+
+            char entry[180];
+
+            snprintf(entry,
+                     sizeof(entry),
+                     "%d:%s,",
+                     pid,
+                     process_name);
+
+            size_t current_length = strlen(output);
+            size_t entry_length = strlen(entry);
+
+            if (current_length + entry_length
+                < output_size - 1) {
+
+                strcat(output, entry);
+            }
+            else {
+                break;
+            }
+        }
+    }
+
+    pclose(fp);
+
+    // Remove final comma
+    size_t len = strlen(output);
+
+    if (len > 0 && output[len - 1] == ',') {
+        output[len - 1] = '\0';
+    }
+
+    return 0;
 }
 
 int main()
@@ -253,6 +308,38 @@ int main()
 
     continue;
     }
+
+
+     // LISTPROC command
+    if (strcmp(buffer, "LISTPROC") == 0) {
+
+    char processes[BUFFER_SIZE];
+    char response[BUFFER_SIZE];
+
+    if (get_process_list(processes,
+                         sizeof(processes)) == 0) {
+
+        snprintf(response,
+                 sizeof(response),
+                 "OK PROCS %s SID:%s\n",
+                 processes,
+                 SID);
+    }
+    else {
+
+        snprintf(response,
+                 sizeof(response),
+                 "ERR 007 PROCESS_LIST_FAILED SID:%s\n",
+                 SID);
+    }
+
+    send(client_fd,
+         response,
+         strlen(response),
+         0);
+
+    continue;
+  }
 
         // QUIT command
         if (strcmp(buffer, "QUIT") == 0) {

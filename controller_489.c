@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 
 #define PORT 9410
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 16384
 
 int recv_line(int sockfd, char *buffer, int max_size)
 {
