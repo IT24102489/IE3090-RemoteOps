@@ -10,3 +10,35 @@
 [2026-10-05 21:06:18] File downloaded: testfile.txt (37 bytes)
 [2026-10-05 21:06:24] Command: QUIT
 [2026-10-05 21:06:24] Controller ended session with QUIT
+[2026-10-05 21:53:49] Agent started
+[2026-10-05 21:53:54] Controller connected
+[2026-10-05 21:54:01] Command: AUTH OPS-2489
+[2026-10-05 21:54:08] Command: MONITOR START 9500
+[2026-10-05 21:54:08] UDP monitoring started
+[2026-10-05 21:55:27] Command: QUIT
+[2026-10-05 21:55:27] Controller ended session with QUIT
+[2026-10-05 21:55:52] Agent started
+[2026-10-05 21:55:57] Controller connected
+[2026-10-05 21:56:13] Command: AUTH OPS-2489
+[2026-10-05 21:56:27] Command: MONITOR START 9500
+[2026-10-05 21:56:27] UDP monitoring started
+[2026-10-05 21:56:40] Command: QUIT
+[2026-10-05 21:56:40] Controller ended session with QUIT
+[2026-10-05 21:58:53] Agent started
+[2026-10-05 21:58:57] Controller connected
+[2026-10-05 21:59:04] Command: AUTH OPS-2489
+[2026-10-05 21:59:09] Command: MONITOR START 9500
+[2026-10-05 21:59:09] UDP monitoring started
+[2026-10-05 21:59:20] Command: MONITOR STOP
+[2026-10-05 21:59:20] UDP monitoring stopped
+[2026-10-05 21:59:36] Command: QUIT
+[2026-10-05 21:59:36] Controller ended session with QUIT
+[2026-10-05 21:59:40] Agent started
+[2026-10-05 21:59:43] Controller connected
+[2026-10-05 21:59:50] Command: AUTH OPS-2489
+[2026-10-05 21:59:55] Command: MONITOR START 9500
+[2026-10-05 21:59:55] UDP monitoring started
+[2026-10-05 22:00:02] Command: MONITOR STOP
+[2026-10-05 22:00:02] UDP monitoring stopped
+[2026-10-05 22:00:38] Command: QUIT
+[2026-10-05 22:00:38] Controller ended session with QUIT
