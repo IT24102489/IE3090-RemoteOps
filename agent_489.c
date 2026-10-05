@@ -168,6 +168,72 @@ int get_process_list(char *output, size_t output_size)
     return 0;
 }
 
+void make_single_line(char *text)
+{
+    for (int i = 0; text[i] != '\0'; i++) {
+
+        if (text[i] == '\n' || text[i] == '\r') {
+            text[i] = ' ';
+        }
+    }
+}
+
+
+int execute_allowed_command(const char *name,
+                            char *output,
+                            size_t output_size)
+{
+    const char *linux_command = NULL;
+
+    if (strcmp(name, "DATE") == 0) {
+        linux_command = "date";
+    }
+    else if (strcmp(name, "UPTIME") == 0) {
+        linux_command = "uptime -p";
+    }
+    else if (strcmp(name, "DISKFREE") == 0) {
+        linux_command = "df -h /";
+    }
+    else if (strcmp(name, "HOSTNAME") == 0) {
+        linux_command = "hostname";
+    }
+    else if (strcmp(name, "WHOAMI") == 0) {
+        linux_command = "whoami";
+    }
+    else {
+        return 0;
+    }
+
+    FILE *fp = popen(linux_command, "r");
+
+    if (fp == NULL) {
+        return -1;
+    }
+
+    output[0] = '\0';
+
+    char line[512];
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+
+        if (strlen(output) + strlen(line)
+            < output_size - 1) {
+
+            strcat(output, line);
+        }
+        else {
+            break;
+        }
+    }
+
+    pclose(fp);
+
+    make_single_line(output);
+
+    return 1;
+}
+
+
 int main()
 {
     int server_fd, client_fd;
@@ -340,6 +406,51 @@ int main()
 
     continue;
   }
+
+
+// EXEC command
+if (strncmp(buffer, "EXEC ", 5) == 0) {
+
+    char *command_name = buffer + 5;
+
+    char command_output[BUFFER_SIZE];
+    char response[BUFFER_SIZE];
+
+    int result =
+        execute_allowed_command(command_name,
+                                command_output,
+                                sizeof(command_output));
+
+    if (result == 1) {
+
+        snprintf(response,
+                 sizeof(response),
+                 "OK EXEC_RESULT %s SID:%s\n",
+                 command_output,
+                 SID);
+    }
+    else if (result == 0) {
+
+        snprintf(response,
+                 sizeof(response),
+                 "ERR 002 COMMAND_NOT_ALLOWED SID:%s\n",
+                 SID);
+    }
+    else {
+
+        snprintf(response,
+                 sizeof(response),
+                 "ERR 008 EXEC_FAILED SID:%s\n",
+                 SID);
+    }
+
+    send(client_fd,
+         response,
+         strlen(response),
+         0);
+
+    continue;
+}
 
         // QUIT command
         if (strcmp(buffer, "QUIT") == 0) {
