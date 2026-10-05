@@ -7,6 +7,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <time.h>
+
+
+#define LOG_FILE "remoteops_IT24102489.log"
 
 #define STORAGE_DIR "./agentfiles/IT24102489"
 #define MAX_FILE_SIZE (10 * 1024 * 1024)
@@ -281,6 +285,32 @@ int send_all(int sockfd, const void *buffer, size_t length)
 }
 
 
+void log_activity(const char *message)
+{
+    FILE *fp = fopen(LOG_FILE, "a");
+
+    if (fp == NULL) {
+        return;
+    }
+
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+
+    char timestamp[64];
+
+    strftime(timestamp,
+             sizeof(timestamp),
+             "%Y-%m-%d %H:%M:%S",
+             t);
+
+    fprintf(fp,
+            "[%s] %s\n",
+            timestamp,
+            message);
+
+    fclose(fp);
+}
+
 
 int main()
 {
@@ -326,7 +356,9 @@ int main()
     }
 
     printf("RemoteOps Agent started on port %d\n", PORT);
+    log_activity("Agent started");
     printf("Waiting for Controller...\n");
+    log_activity("Controller connected");
 
     // 5. Accept one Controller for this development stage
     client_fd = accept(server_fd, NULL, NULL);
@@ -346,6 +378,7 @@ int main()
 
         if (result == 0) {
             printf("Controller disconnected.\n");
+            log_activity("Controller disconnected unexpectedly");
             break;
         }
 
@@ -355,6 +388,15 @@ int main()
         }
 
         printf("Received command: %s\n", buffer);
+
+        char log_message[BUFFER_SIZE + 16];
+
+        snprintf(log_message,
+         sizeof(log_message),
+         "Command: %s",
+         buffer);
+
+        log_activity(log_message);
 
         // AUTH command
         if (strncmp(buffer, "AUTH ", 5) == 0) {
@@ -430,7 +472,7 @@ int main()
      // LISTPROC command
     if (strcmp(buffer, "LISTPROC") == 0) {
 
-    char processes[BUFFER_SIZE];
+    char processes[BUFFER_SIZE - 128];
     char response[BUFFER_SIZE];
 
     if (get_process_list(processes,
@@ -464,7 +506,7 @@ if (strncmp(buffer, "EXEC ", 5) == 0) {
 
     char *command_name = buffer + 5;
 
-    char command_output[BUFFER_SIZE];
+    char command_output[BUFFER_SIZE - 128];
     char response[BUFFER_SIZE];
 
     int result =
@@ -564,9 +606,9 @@ if (strncmp(buffer, "PUT ", 4) == 0) {
     while (remaining > 0) {
 
         size_t chunk_size =
-            remaining < sizeof(file_buffer)
-            ? remaining
-            : sizeof(file_buffer);
+         remaining < (long)sizeof(file_buffer)
+         ? (size_t)remaining
+         : sizeof(file_buffer);
 
         ssize_t received =
             recv(client_fd,
@@ -603,6 +645,17 @@ if (strncmp(buffer, "PUT ", 4) == 0) {
     printf("File received: %s (%ld bytes)\n",
            filename,
            filesize);
+
+     char file_log[512];
+
+     snprintf(file_log,
+         sizeof(file_log),
+         "File uploaded: %s (%ld bytes)",
+         filename,
+         filesize);
+
+     log_activity(file_log);
+
 
     continue;
 }
@@ -689,6 +742,16 @@ if (strncmp(buffer, "GET ", 4) == 0) {
            filename,
            filesize);
 
+    char file_log[512];
+
+    snprintf(file_log,
+         sizeof(file_log),
+         "File downloaded: %s (%ld bytes)",
+         filename,
+         filesize);
+
+   log_activity(file_log);
+
     continue;
 }
 
@@ -705,6 +768,7 @@ if (strncmp(buffer, "GET ", 4) == 0) {
                  0);
 
             printf("Controller ended the session.\n");
+            log_activity("Controller ended session with QUIT");
 
             break;
         }
