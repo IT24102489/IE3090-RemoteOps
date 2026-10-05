@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,13 +8,44 @@
 #define PORT 9410
 #define BUFFER_SIZE 1024
 
+int recv_line(int sockfd, char *buffer, int max_size)
+{
+    int i = 0;
+    char ch;
+
+    while (i < max_size - 1) {
+
+        int bytes = recv(sockfd, &ch, 1, 0);
+
+        if (bytes == 0) {
+            return 0;
+        }
+
+        if (bytes < 0) {
+            return -1;
+        }
+
+        if (ch == '\n') {
+            break;
+        }
+
+        buffer[i++] = ch;
+    }
+
+    buffer[i] = '\0';
+
+    return i;
+}
+
 int main()
 {
     int sockfd;
     struct sockaddr_in server_addr;
-    char buffer[BUFFER_SIZE];
 
-    // Step 1: Create TCP socket
+    char command[BUFFER_SIZE];
+    char response[BUFFER_SIZE];
+
+    // 1. Create TCP socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0) {
@@ -23,16 +53,17 @@ int main()
         return 1;
     }
 
-    // Step 2: Configure Agent address
+    // 2. Configure Agent address
     memset(&server_addr, 0, sizeof(server_addr));
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
 
-    inet_pton(AF_INET, "127.0.0.1",
+    inet_pton(AF_INET,
+              "127.0.0.1",
               &server_addr.sin_addr);
 
-    // Step 3: Connect to Agent
+    // 3. Connect to Agent
     if (connect(sockfd,
                 (struct sockaddr *)&server_addr,
                 sizeof(server_addr)) < 0) {
@@ -42,25 +73,47 @@ int main()
         return 1;
     }
 
-    printf("Connected to RemoteOps Agent!\n");
+    printf("Connected to RemoteOps Agent.\n");
+    printf("Enter commands below.\n");
 
-    // Step 4: Send test message
-    char message[] = "HELLO FROM CONTROLLER\n";
+    while (1) {
 
-    send(sockfd, message, strlen(message), 0);
+        printf("RemoteOps> ");
+        fflush(stdout);
 
-    // Step 5: Receive Agent response
-    memset(buffer, 0, BUFFER_SIZE);
+        if (fgets(command,
+                  sizeof(command),
+                  stdin) == NULL) {
+            break;
+        }
 
-    int bytes = recv(sockfd, buffer,
-                     BUFFER_SIZE - 1, 0);
+        // Send complete command including newline
+        send(sockfd,
+             command,
+             strlen(command),
+             0);
 
-    if (bytes > 0) {
-        buffer[bytes] = '\0';
-        printf("Agent response: %s", buffer);
+        // Receive one response line
+        int result =
+            recv_line(sockfd,
+                      response,
+                      BUFFER_SIZE);
+
+        if (result <= 0) {
+            printf("Agent disconnected.\n");
+            break;
+        }
+
+        printf("%s\n", response);
+
+        // Remove newline from local input for comparison
+        command[strcspn(command, "\n")] = '\0';
+
+        if (strcmp(command, "QUIT") == 0) {
+            break;
+        }
     }
 
-    // Step 6: Close connection
     close(sockfd);
 
     return 0;
