@@ -2,3 +2,11 @@ agent
 agent_489
 controller_489
 *.o
+
+agent_489_backup.c
+agent_489_before_concurrency.c
+controller_489_backup.c
+
+agentfiles/
+testfile.txt
+downloaded_testfile.txt
