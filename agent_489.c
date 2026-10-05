@@ -45,6 +45,74 @@ int recv_line(int sockfd, char *buffer, int max_size)
     return i;
 }
 
+double get_cpu_load()
+{
+    FILE *fp;
+    double load = 0.0;
+
+    fp = fopen("/proc/loadavg", "r");
+
+    if (fp == NULL) {
+        return -1.0;
+    }
+
+    fscanf(fp, "%lf", &load);
+
+    fclose(fp);
+
+    return load;
+}
+
+long get_memory_used_mb()
+{
+    FILE *fp;
+    char line[256];
+
+    long mem_total = 0;
+    long mem_available = 0;
+
+    fp = fopen("/proc/meminfo", "r");
+
+    if (fp == NULL) {
+        return -1;
+    }
+
+    while (fgets(line, sizeof(line), fp)) {
+
+        if (sscanf(line, "MemTotal: %ld kB", &mem_total) == 1) {
+            continue;
+        }
+
+        if (sscanf(line, "MemAvailable: %ld kB", &mem_available) == 1) {
+            continue;
+        }
+    }
+
+    fclose(fp);
+
+    long used_kb = mem_total - mem_available;
+
+    return used_kb / 1024;
+}
+
+long get_uptime_seconds()
+{
+    FILE *fp;
+    double uptime = 0.0;
+
+    fp = fopen("/proc/uptime", "r");
+
+    if (fp == NULL) {
+        return -1;
+    }
+
+    fscanf(fp, "%lf", &uptime);
+
+    fclose(fp);
+
+    return (long)uptime;
+}
+
 int main()
 {
     int server_fd, client_fd;
@@ -160,6 +228,31 @@ int main()
 
             continue;
         }
+
+	// SYSINFO command
+    if (strcmp(buffer, "SYSINFO") == 0) {
+
+    double cpu_load = get_cpu_load();
+    long mem_used_mb = get_memory_used_mb();
+    long uptime_sec = get_uptime_seconds();
+
+    char response[BUFFER_SIZE];
+
+    snprintf(response,
+             sizeof(response),
+             "OK SYSINFO %.2f %ld %ld SID:%s\n",
+             cpu_load,
+             mem_used_mb,
+             uptime_sec,
+             SID);
+
+    send(client_fd,
+         response,
+         strlen(response),
+         0);
+
+    continue;
+    }
 
         // QUIT command
         if (strcmp(buffer, "QUIT") == 0) {
