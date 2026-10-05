@@ -4,6 +4,12 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+
+#define STORAGE_DIR "./agentfiles/IT24102489"
+#define MAX_FILE_SIZE (10 * 1024 * 1024)
 
 #define PORT 9410
 #define BUFFER_SIZE 16384
@@ -233,6 +239,48 @@ int execute_allowed_command(const char *name,
     return 1;
 }
 
+void ensure_storage_directory()
+{
+    mkdir("./agentfiles", 0755);
+    mkdir(STORAGE_DIR, 0755);
+}
+
+int valid_filename(const char *filename)
+{
+    if (strstr(filename, "..") != NULL) {
+        return 0;
+    }
+
+    if (strchr(filename, '/') != NULL) {
+        return 0;
+    }
+
+    return 1;
+}
+
+int send_all(int sockfd, const void *buffer, size_t length)
+{
+    size_t total_sent = 0;
+    const char *data = (const char *)buffer;
+
+    while (total_sent < length) {
+
+        ssize_t sent = send(sockfd,
+                            data + total_sent,
+                            length - total_sent,
+                            0);
+
+        if (sent <= 0) {
+            return -1;
+        }
+
+        total_sent += sent;
+    }
+
+    return 0;
+}
+
+
 
 int main()
 {
@@ -241,6 +289,9 @@ int main()
 
     char buffer[BUFFER_SIZE];
     int authenticated = 0;
+
+    ensure_storage_directory();
+
 
     // 1. Create TCP socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -451,6 +502,196 @@ if (strncmp(buffer, "EXEC ", 5) == 0) {
 
     continue;
 }
+
+//PUT
+if (strncmp(buffer, "PUT ", 4) == 0) {
+
+    char filename[256];
+    long filesize;
+
+    if (sscanf(buffer,
+               "PUT %255s %ld",
+               filename,
+               &filesize) != 2) {
+
+        char response[] =
+            "ERR 009 INVALID_PUT_FORMAT SID:" SID "\n";
+
+        send_all(client_fd, response, strlen(response));
+        continue;
+    }
+
+    if (!valid_filename(filename)) {
+
+        char response[] =
+            "ERR 010 INVALID_FILENAME SID:" SID "\n";
+
+        send_all(client_fd, response, strlen(response));
+        continue;
+    }
+
+    if (filesize < 0 || filesize > MAX_FILE_SIZE) {
+
+        char response[] =
+            "ERR 004 FILE_TOO_LARGE SID:" SID "\n";
+
+        send_all(client_fd, response, strlen(response));
+        continue;
+    }
+
+    char filepath[512];
+
+    snprintf(filepath,
+             sizeof(filepath),
+             "%s/%s",
+             STORAGE_DIR,
+             filename);
+
+    FILE *fp = fopen(filepath, "wb");
+
+    if (fp == NULL) {
+
+        char response[] =
+            "ERR 011 FILE_CREATE_FAILED SID:" SID "\n";
+
+        send_all(client_fd, response, strlen(response));
+        continue;
+    }
+
+    long remaining = filesize;
+    char file_buffer[4096];
+
+    while (remaining > 0) {
+
+        size_t chunk_size =
+            remaining < sizeof(file_buffer)
+            ? remaining
+            : sizeof(file_buffer);
+
+        ssize_t received =
+            recv(client_fd,
+                 file_buffer,
+                 chunk_size,
+                 0);
+
+        if (received <= 0) {
+            fclose(fp);
+            remove(filepath);
+            break;
+        }
+
+        fwrite(file_buffer, 1, received, fp);
+        remaining -= received;
+    }
+
+    fclose(fp);
+
+    if (remaining > 0) {
+        break;
+    }
+
+    char response[512];
+
+    snprintf(response,
+             sizeof(response),
+             "OK FILE_RECEIVED %s SID:%s\n",
+             filename,
+             SID);
+
+    send_all(client_fd, response, strlen(response));
+
+    printf("File received: %s (%ld bytes)\n",
+           filename,
+           filesize);
+
+    continue;
+}
+
+
+//GET
+if (strncmp(buffer, "GET ", 4) == 0) {
+
+    char filename[256];
+
+    if (sscanf(buffer,
+               "GET %255s",
+               filename) != 1) {
+
+        char response[] =
+            "ERR 012 INVALID_GET_FORMAT SID:" SID "\n";
+
+        send_all(client_fd, response, strlen(response));
+        continue;
+    }
+
+    if (!valid_filename(filename)) {
+
+        char response[] =
+            "ERR 010 INVALID_FILENAME SID:" SID "\n";
+
+        send_all(client_fd, response, strlen(response));
+        continue;
+    }
+
+    char filepath[512];
+
+    snprintf(filepath,
+             sizeof(filepath),
+             "%s/%s",
+             STORAGE_DIR,
+             filename);
+
+    FILE *fp = fopen(filepath, "rb");
+
+    if (fp == NULL) {
+
+        char response[] =
+            "ERR 005 FILE_NOT_FOUND SID:" SID "\n";
+
+        send_all(client_fd, response, strlen(response));
+        continue;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    long filesize = ftell(fp);
+    rewind(fp);
+
+    char response[512];
+
+    snprintf(response,
+             sizeof(response),
+             "OK FILE_SEND %s %ld SID:%s\n",
+             filename,
+             filesize,
+             SID);
+
+    send_all(client_fd, response, strlen(response));
+
+    char file_buffer[4096];
+    size_t bytes_read;
+
+    while ((bytes_read =
+            fread(file_buffer,
+                  1,
+                  sizeof(file_buffer),
+                  fp)) > 0) {
+
+        if (send_all(client_fd,
+                     file_buffer,
+                     bytes_read) < 0) {
+            break;
+        }
+    }
+
+    fclose(fp);
+
+    printf("File sent: %s (%ld bytes)\n",
+           filename,
+           filesize);
+
+    continue;
+}
+
 
         // QUIT command
         if (strcmp(buffer, "QUIT") == 0) {
