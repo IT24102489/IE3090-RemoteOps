@@ -114,7 +114,7 @@ int recv_line(int sockfd,
 }
 
 
-//   FILE STORAGE
+//  FILE STORAGE
 
 void ensure_storage_directory()
 {
