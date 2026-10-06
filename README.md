@@ -36,4 +36,4 @@ Activity log
 remoteops_IT24102489.log
 
 Concurrency
-POSIX pthreads, at least 5 Controllers
+POSIX pthreads, Multiple Controllers
