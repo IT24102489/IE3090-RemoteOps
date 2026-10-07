@@ -1,0 +1,27 @@
+Student ID: IT24102489
+Module: IE3090 Network Programming
+Assignment: RemoteOps
+
+Initial TCP Prototype
+The project was started by creating a basic TCP Agent and Controller in C on CentOS. The first goal was to confirm that the Agent could listen on the personalised port 9410 and that the Controller could connect successfully. A simple HELLO message exchange was used before implementing the full protocol.
+
+Authentication and Command Framing
+After confirming the TCP connection, newline-based command handling and authentication were implemented. The personalised token OPS-2489 and SID 9842 were used. One important decision was to reject all protected commands until authentication succeeded.
+
+System Monitoring and Command Execution
+SYSINFO was implemented using live Linux information from /proc. LISTPROC was added using the Linux process list. EXEC was limited to the approved commands DATE, UPTIME, DISKFREE, HOSTNAME, and WHOAMI instead of allowing arbitrary shell commands.
+
+File Transfer
+PUT and GET were implemented using exact byte counts so that files could be transferred correctly even when they were larger than the buffer size. Files received by the Agent were stored in ./agentfiles/IT24102489/. File integrity was verified using cmp and SHA-256 hashes.
+
+Activity Logging and UDP Monitoring
+Persistent logging was added using remoteops_IT24102489.log to record connections, commands, transfers, monitoring events, and session termination. UDP monitoring was then implemented so that periodic SYSINFO data could be sent to a Controller-supplied UDP port.
+
+Concurrency
+The original Agent handled one Controller at a time. It was later changed to use POSIX threads so that multiple Controllers could connect simultaneously. Each connection is handled by a separate worker thread, while a mutex protects concurrent writes to the activity log.
+
+Main Obstacles
+The main difficulties were fixing compiler warnings, handling TCP message framing, implementing reliable file-transfer loops, stopping UDP monitoring safely, and converting the Agent to support concurrent Controllers. These problems were solved through repeated testing, debugging, and incremental Git commits.
+
+Final Testing
+The completed system was tested for authentication, SYSINFO, LISTPROC, EXEC, PUT, GET, UDP monitoring, logging, QUIT handling, file integrity, and simultaneous Controller connections. A Makefile was also created to provide a repeatable build process.
